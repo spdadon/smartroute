@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SmartRoute V2 - Apple Maps</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #0d0d0d;
+    color: white;
+    text-align: center;
+}
+
+textarea {
+    width: 90%;
+    height: 120px;
+    margin: 10px;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+button {
+    padding: 12px;
+    margin: 5px;
+    border-radius: 10px;
+    border: none;
+    background: #222;
+    color: white;
+    font-size: 14px;
+}
+
+.stop {
+    background:#1a1a1a;
+    margin:5px;
+    padding:10px;
+    border-radius:8px;
+}
+
+.batch {
+    background:#2a2a2a;
+    margin:10px;
+    padding:10px;
+    border-radius:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>SmartRoute V2</h2>
+
+<p>Paste Amazon Flex list</p>
+
+<textarea id="input" placeholder="Paste route text here"></textarea><br>
+
+<button onclick="extract()">Auto Extract</button>
+<button onclick="makeBatches()">Create Batches</button>
+
+<div id="output"></div>
+
+<script>
+
+let stops = [];
+let batches = [];
+
+function extract(){
+    let raw = document.getElementById("input").value;
+    let lines = raw.split("\n");
+
+    stops = [];
+
+    for(let i=0;i<lines.length;i++){
+        let line = lines[i];
+
+        if(line.match(/\d+.*(AVE|ST|RD|DR|BLVD|LN)/i)){
+            let address = line;
+
+            if(lines[i+1]){
+                address += ", " + lines[i+1];
+            }
+
+            stops.push(address);
+        }
+    }
+
+    renderStops();
+}
+
+function makeBatches(){
+    batches = [];
+
+    let size = 8;
+
+    for(let i=0;i<stops.length;i+=size){
+        batches.push(stops.slice(i, i+size));
+    }
+
+    renderBatches();
+}
+
+function openBatch(index){
+    let batch = batches[index];
+
+    let url = "http://maps.apple.com/?daddr=";
+
+    batch.forEach((addr,i)=>{
+        url += encodeURIComponent(addr);
+        if(i < batch.length - 1){
+            url += "+to:";
+        }
+    });
+
+    window.open(url);
+}
+
+function renderStops(){
+    let out = document.getElementById("output");
+    out.innerHTML = "<h3>Stops</h3>";
+
+    stops.forEach((s,i)=>{
+        out.innerHTML += `<div class="stop">${i+1}. ${s}</div>`;
+    });
+}
+
+function renderBatches(){
+    let out = document.getElementById("output");
+    out.innerHTML = "<h3>Batches</h3>";
+
+    batches.forEach((batch,i)=>{
+        out.innerHTML += `<div class="batch">
+            <b>Batch ${i+1}</b><br>
+            Stops: ${batch.length}<br>
+            <button onclick="openBatch(${i})">Open in Apple Maps</button>
+        </div>`;
+    });
+}
+
+</script>
+
+</body>
+</html>
